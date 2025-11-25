@@ -2,11 +2,21 @@
 # 2. it will ask you to install python, just install
 # 3. after installation, input "pip install pygame"
 # 4. there you go
+
+'''
+https://www.peko-step.com/zhtw/tool/tfcolor.html (顏色轉換器)
+'''
+
+
 import pygame as pg
+import math
 
 ##### initialize
+
+
 H=600
 W=800
+TIME=0.001
 screen=pg.display.set_mode((W,H))
 pg.display.set_caption("多元選修")
 image_icon=pg.image.load('image/game_icon.png') #load icon
@@ -14,14 +24,18 @@ pg.display.set_icon(image_icon)
 
 
 ##### initialize end
-##### def
+
+
+##### def class
 
 class Ball:
-    def __init__(self,x,y,Radius,mass):
+    def __init__(self,x,y,Radius,mass,vx=0,vy=0):
         self.x=x
         self.y=y
         self.Radius=Radius
         self.mass=mass
+        self.vx=vx
+        self.vy=vy
         
     def draw(self,screen):
         pg.draw.circle(screen,(112,128,144),(int(self.x),int(self.y)),radius=float(self.Radius))
@@ -35,21 +49,60 @@ class Planet:
         self.mass=mass
         
     def draw(self,screen):
-        pg.draw.circle(screen,(112,128,144),(int(self.x),int(self.y)),radius=float(self.Radius))
+        pg.draw.circle(screen,(50, 180, 180),(int(self.x),int(self.y)),radius=float(self.Radius))
 
+def apply_gravity(ball, planet,dt, G=1000):
+    dx = planet.x - ball.x
+    dy = planet.y - ball.y
+    dist = math.sqrt(dx*dx + dy*dy)
+
+    force = G * planet.mass / (dist * dist)
+
+    ax = force * (dx / dist)
+    ay = force * (dy / dist)
+
+    ball.vx += ax*dt
+    ball.vy += ay*dt
 ##### def end
 
-running=True
-ball=Ball(x=W/2,y=H/2,Radius=50,mass=100)
-planet=Planet(x=50,y=50,Radius=20,mass=100)
+ball=Ball(x=W/2,y=H/2,Radius=20,mass=100)
+planet=Planet(x=300,y=200,Radius=50,mass=100)
+clock=pg.time.Clock()
+dt=0
+dragging=False
 
-while running:
-    for event in pg.event.get():
-        if event.type== pg.QUIT:
-            running=False
-
-    screen.fill((255,255,255))
+def showScreen1():
+    global dragging
+    screen.fill((247,251,247))
     ball.draw(screen)
     planet.draw(screen)
+    for event in pg.event.get():
+        if event.type== pg.QUIT:
+            pg.quit()
+        
+        ##### dragging ball
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:  # 左鍵
+                mx, my = pg.mouse.get_pos()
+                # 判斷滑鼠是否點在 ball 上（用距離判斷）
+                if (mx - ball.x)**2 + (my - ball.y)**2 <= ball.Radius**2:
+                    dragging = True
+
+        if event.type == pg.MOUSEBUTTONUP:
+            if event.button == 1:  # 左鍵放開
+                dragging = False
+
+        if event.type == pg.MOUSEMOTION:
+            if dragging:
+                ball.x, ball.y = pg.mouse.get_pos()
+        ### dragging ball end
+
+        apply_gravity(ball,planet,dt)
     pg.display.flip()
+
+
+while 1:
+    dt=clock.tick(60)/1000 # 60fps 轉成秒
+    showScreen1()
+
 pg.quit()
